@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>圖文靈感工坊｜AI 圖片文案生成工具</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">✦</div>
+        <div>
+          <h1>圖文靈感工坊</h1>
+          <p class="brand-sub">上傳圖片，自動解析視覺細節並生成多平台社群文案</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" id="historyBtn" class="btn btn-ghost">
+          <span>歷史紀錄</span>
+          <span id="historyBadge" class="badge hidden">0</span>
+        </button>
+        <button type="button" id="settingsBtn" class="btn btn-outline">
+          <span id="providerStatusDot" class="status-dot"></span>
+          <span id="providerBadgeText">API 設定</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- Left Column: Image Upload + Controls -->
+    <section class="panel controls-panel" aria-label="圖片上傳與文案設定">
+      <div class="card">
+        <div class="card-header">
+          <h2>1. 上傳圖片</h2>
+          <button type="button" id="loadSampleBtn" class="btn-link">載入範例圖片</button>
+        </div>
+
+        <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="拖曳圖片到此處或點擊選擇圖片">
+          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+          <div id="dropPlaceholder" class="drop-placeholder">
+            <div class="upload-icon" aria-hidden="true">🖼️</div>
+            <p class="drop-title">拖曳圖片到這裡，或點擊選擇檔案</p>
+            <p class="drop-hint">支援 PNG、JPG、WebP、GIF，也可直接按 <kbd>Ctrl</kbd> + <kbd>V</kbd> 貼上剪貼簿圖片</p>
+          </div>
+
+          <div id="previewContainer" class="preview-container hidden">
+            <img id="previewImg" alt="已上傳圖片預覽" />
+            <div class="preview-toolbar">
+              <div id="imageMeta" class="image-meta"></div>
+              <div class="preview-actions">
+                <button type="button" id="replaceImgBtn" class="btn btn-xs btn-ghost">更換圖片</button>
+                <button type="button" id="clearImgBtn" class="btn btn-xs btn-ghost-danger">移除</button>
+              </div>
+            </div>
+            <div id="paletteBar" class="palette-bar" title="圖片主色調"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>2. 文案參數設定</h2>
+          <span class="hint-text">依平台特性調整節奏</span>
+        </div>
+
+        <div class="field">
+          <label>目標平台</label>
+          <div id="platformGroup" class="pill-group" role="radiogroup" aria-label="目標平台">
+            <button type="button" class="pill active" data-value="instagram">Instagram</button>
+            <button type="button" class="pill" data-value="threads">Threads</button>
+            <button type="button" class="pill" data-value="facebook">Facebook</button>
+            <button type="button" class="pill" data-value="xiaohongshu">小紅書</button>
+            <button type="button" class="pill" data-value="ecommerce">電商商品</button>
+            <button type="button" class="pill" data-value="line">LINE / EDM</button>
+            <button type="button" class="pill" data-value="general">通用</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>語氣風格</label>
+          <div id="toneGroup" class="pill-group" role="radiogroup" aria-label="語氣風格">
+            <button type="button" class="pill active" data-value="friendly">親切活潑</button>
+            <button type="button" class="pill" data-value="professional">專業質感</button>
+            <button type="button" class="pill" data-value="witty">幽默風趣</button>
+            <button type="button" class="pill" data-value="poetic">文青感性</button>
+            <button type="button" class="pill" data-value="minimal">極簡俐落</button>
+            <button type="button" class="pill" data-value="persuasive">熱情種草</button>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="languageSelect">輸出語言</label>
+            <select id="languageSelect">
+              <option value="zh-TW">繁體中文（台灣）</option>
+              <option value="zh-HK">繁體中文（香港）</option>
+              <option value="zh-CN">簡體中文</option>
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+              <option value="bilingual">中英雙語</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="lengthSelect">篇幅長度</label>
+            <select id="lengthSelect">
+              <option value="short">精簡（30–60 字）</option>
+              <option value="medium" selected>適中（90–180 字）</option>
+              <option value="long">長文（220–380 字）</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="variantsSelect">生成版本數</label>
+            <select id="variantsSelect">
+              <option value="1">1 組</option>
+              <option value="2">2 組</option>
+              <option value="3" selected>3 組（推薦）</option>
+              <option value="4">4 組</option>
+              <option value="5">5 組</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <label class="toggle-item">
+            <input type="checkbox" id="includeHashtags" checked />
+            <span>附上建議 Hashtags</span>
+          </label>
+          <label class="toggle-item">
+            <input type="checkbox" id="includeEmoji" checked />
+            <span>適度穿插 Emoji</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="extraContext">補充背景 / 關鍵字 / 優惠資訊 <span class="optional">(選填)</span></label>
+          <textarea
+            id="extraContext"
+            rows="3"
+            placeholder="例如：自家烘焙單品手沖咖啡、週末限定第二杯半價、品牌調性溫暖慢活，目標客群為都會上班族"
+          ></textarea>
+        </div>
+
+        <button type="button" id="generateBtn" class="btn btn-primary btn-full">
+          <span id="generateBtnText">✦ 立即生成圖片文案</span>
+        </button>
+        <p id="modeHint" class="mode-hint"></p>
+      </div>
+    </section>
+
+    <!-- Right Column: Results -->
+    <section class="panel results-panel" aria-label="生成結果">
+      <div id="emptyState" class="empty-state card">
+        <div class="empty-art" aria-hidden="true">✍️</div>
+        <h3>準備好把圖片變成好文案了嗎？</h3>
+        <p>在左側上傳一張商品照、美食照、旅遊攝影或活動海報，選擇平台與語氣後點擊「立即生成圖片文案」。</p>
+        <ul class="feature-list">
+          <li>自動辨識畫面主體、色彩氛圍與細節亮點</li>
+          <li>一次產出多種切角（故事共鳴、賣點直擊、互動提問）</li>
+          <li>支援直接編修內容、單鍵複製與匯出 Markdown / JSON</li>
+        </ul>
+      </div>
+
+      <div id="loadingState" class="loading-state card hidden" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <h3>正在解讀圖片並撰寫文案…</h3>
+        <p id="loadingSubtext">正在分析構圖、氛圍與關鍵視覺亮點</p>
+      </div>
+
+      <div id="errorBanner" class="error-banner hidden" role="alert">
+        <div>
+          <strong>生成時發生問題</strong>
+          <p id="errorMessage"></p>
+        </div>
+        <button type="button" id="errorOpenSettings" class="btn btn-xs btn-outline">檢查 API 設定</button>
+      </div>
+
+      <div id="resultsContent" class="results-content hidden">
+        <div class="card analysis-card">
+          <div class="card-header">
+            <div>
+              <h2>視覺解讀摘要</h2>
+              <span id="resultModelBadge" class="meta-pill"></span>
+            </div>
+            <div class="export-actions">
+              <button type="button" id="exportMdBtn" class="btn btn-xs btn-ghost">匯出 Markdown</button>
+              <button type="button" id="exportJsonBtn" class="btn btn-xs btn-ghost">匯出 JSON</button>
+            </div>
+          </div>
+          <div class="analysis-grid">
+            <div class="analysis-item">
+              <span class="analysis-label">畫面主體</span>
+              <p id="analysisSubject"></p>
+            </div>
+            <div class="analysis-item">
+              <span class="analysis-label">氛圍與色調</span>
+              <p id="analysisMood"></p>
+            </div>
+          </div>
+          <div id="analysisHighlights" class="highlights-row"></div>
+        </div>
+
+        <div id="copiesList" class="copies-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- API Settings Modal -->
+  <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="settingsTitle">AI 模型與 API 設定</h2>
+        <button type="button" id="closeSettingsBtn" class="icon-btn" aria-label="關閉">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="providerSelect">選擇 AI 供應商</label>
+          <select id="providerSelect">
+            <option value="gemini">Google Gemini（推薦）</option>
+            <option value="openai">OpenAI / 相容 API（OpenRouter、Ollama、LM Studio）</option>
+            <option value="demo">離線示範模式（免 API Key 體驗介面）</option>
+          </select>
+        </div>
+
+        <div id="geminiConfigBox" class="provider-box">
+          <div class="field">
+            <label for="geminiKeyInput">Gemini API Key</label>
+            <input type="password" id="geminiKeyInput" placeholder="AIza...（若伺服器 .env 已設定可留空）" autocomplete="off" />
+            <p id="serverGeminiHint" class="field-hint"></p>
+          </div>
+          <div class="field">
+            <label for="geminiModelInput">Gemini 模型</label>
+            <input type="text" id="geminiModelInput" value="gemini-2.5-flash" placeholder="例如 gemini-2.5-flash 或 gemini-2.5-pro" />
+          </div>
+        </div>
+
+        <div id="openaiConfigBox" class="provider-box hidden">
+          <div class="field">
+            <label for="openaiBaseUrlInput">API Base URL</label>
+            <input type="text" id="openaiBaseUrlInput" value="https://api.openai.com/v1" placeholder="例如 https://api.openai.com/v1 或 http://localhost:11434/v1" />
+          </div>
+          <div class="field">
+            <label for="openaiKeyInput">API Key</label>
+            <input type="password" id="openaiKeyInput" placeholder="sk-...（本地 Ollama 可留空）" autocomplete="off" />
+            <p id="serverOpenaiHint" class="field-hint"></p>
+          </div>
+          <div class="field">
+            <label for="openaiModelInput">視覺模型名稱</label>
+            <input type="text" id="openaiModelInput" value="gpt-4o-mini" placeholder="例如 gpt-4o-mini、gpt-4o、qwen2.5vl" />
+          </div>
+        </div>
+
+        <div id="demoConfigBox" class="provider-box hidden">
+          <div class="info-callout">
+            示範模式不會傳送圖片至外部 AI，而是根據圖片尺寸、主色調與您選擇的平台／關鍵字產出結構化範例文案，方便先體驗操作與版面功能。
+          </div>
+        </div>
+
+        <p class="privacy-note">
+          金鑰僅儲存在您的瀏覽器 <code>localStorage</code> 並透過本機後端轉發請求，不會寫入專案檔案。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="saveSettingsBtn" class="btn btn-primary">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Drawer Modal -->
+  <div id="historyModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2 id="historyTitle">生成歷史紀錄</h2>
+        <div class="modal-header-actions">
+          <button type="button" id="clearHistoryBtn" class="btn btn-xs btn-ghost-danger">清空全部</button>
+          <button type="button" id="closeHistoryBtn" class="icon-btn" aria-label="關閉">✕</button>
+        </div>
+      </div>
+      <div id="historyList" class="modal-body history-list"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
