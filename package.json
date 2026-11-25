@@ -1,0 +1,11 @@
+{
+  "name": "image-copywriter",
+  "version": "1.0.0",
+  "description": "AI-powered image-to-copywriting web tool supporting Gemini, OpenAI-compatible APIs, and demo mode.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  }
+}
