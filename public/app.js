@@ -1,3 +1,5 @@
+import { generateCopyFromImage } from './engine.js';
+
 const STORAGE_SETTINGS_KEY = 'imageCopywriter.settings.v1';
 const STORAGE_HISTORY_KEY = 'imageCopywriter.history.v1';
 
@@ -6,6 +8,7 @@ const state = {
   platform: 'instagram',
   tone: 'friendly',
   result: null,
+  hasBackend: false,
   serverHealth: { hasServerGeminiKey: false, hasServerOpenAIKey: false },
   settings: loadSettings(),
   history: loadHistory(),
@@ -413,14 +416,20 @@ async function generateCopy({ focusAngle = '' } = {}) {
   };
 
   try {
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || `伺服器錯誤 (${res.status})`);
+    let data;
+    if (state.hasBackend) {
+      const res = await fetch('./api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `伺服器錯誤 (${res.status})`);
+      }
+    } else {
+      // Static web mode (e.g. GitHub Pages): run directly in browser
+      data = await generateCopyFromImage(payload);
     }
 
     state.result = data;
@@ -838,12 +847,16 @@ async function init() {
   renderHistoryBadge();
 
   try {
-    const healthRes = await fetch('/api/health');
+    const healthRes = await fetch('./api/health');
     if (healthRes.ok) {
-      state.serverHealth = await healthRes.json();
+      const contentType = healthRes.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        state.serverHealth = await healthRes.json();
+        state.hasBackend = true;
+      }
     }
   } catch {
-    // ignore
+    state.hasBackend = false;
   }
   updateProviderStatusUI();
 }
